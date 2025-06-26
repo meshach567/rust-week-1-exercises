@@ -1,29 +1,19 @@
-#[allow(unused)]
+use std::io::Read;
 
 // Implement extract_tx_version function below
+pub fn extract_tx_version(raw_tx_hex: &str) -> Result<u32, String> {
+    let transaction_bytes = hex::decode(raw_tx_hex).map_err(|_x| "Hex decode error")?;
+    if transaction_bytes.len() < 8 {
+        return Err("Transaction data too short".into());
+    }
 
-pub fn extract_tx_version(_raw_tx_hex: &str) -> Result<u32, String> {
-    return match hex::decode(_raw_tx_hex) {
-        Ok(decoded) => {
-            if decoded.len() < 4 {
-                Err("Transaction hex is too short to contain a version".to_string())
-            } else {
-                // The version is stored in the first 4 bytes
-                let version_bytes = &decoded[0..4];
-                let version = u32::from_le_bytes([version_bytes[0], version_bytes[1], version_bytes[2], version_bytes[3]]);
-                Ok(version)
-            }
-        },
-        Err(e) => Err(format!("Failed to decode hex: {}", e)),
-    };
+    let mut bytes_slice = transaction_bytes.as_slice();
+    Ok(read_version(&mut bytes_slice))
 }
 
-#[allow(unused)]
-fn main() {
-    // Example usage of the extract_tx_version function
-    let raw_tx_hex = "0100000001abcdef"; // Example hex string
-    match extract_tx_version(raw_tx_hex) {
-        Ok(version) => println!("Transaction version: {}", version),
-        Err(e) => println!("Error extracting transaction version: {}", e),
-    }
+fn read_version(transaction_bytes: &mut &[u8]) -> u32 {
+    let mut buffer = [0; 4];
+    transaction_bytes.read_exact(&mut buffer).unwrap();
+
+    u32::from_le_bytes(buffer)
 }
